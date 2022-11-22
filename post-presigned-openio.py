@@ -55,9 +55,9 @@ def main():
         http_response = requests.post(response['url'], data=response['fields'], files=files)
     # If successful, returns HTTP status code 204
     logging.info(f'File upload HTTP status code: {http_response.status_code}')
-    print(http_response.status_code, http_response.headers)
-    print( http_response.content)
-    print("x"*10)
+    if http_response.status_code != 204:
+        logging.warning(f'File upload HTTP status code: {http_response.status_code}')
+        logging.debug( http_response.content)
 
 if __name__ == "__main__":
     main()
