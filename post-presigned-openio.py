@@ -4,7 +4,7 @@ from botocore.exceptions import ClientError
 import os
 import requests    # To install: pip install requests
 
-def create_presigned_post(bucket_name, object_name,
+def create_presigned_post(session, bucket_name, object_name,
                           fields=None, conditions=None, expiration=3600):
     """Generate a presigned URL S3 POST request to upload a file
 
@@ -18,8 +18,6 @@ def create_presigned_post(bucket_name, object_name,
         fields: Dictionary of form fields and values to submit with the POST
     :return: None if error.
     """
-
-    # Generate a presigned S3 POST URL
     s3_client = session.client(service_name='s3', endpoint_url="https://s3.gra.io.cloud.ovh.net")
     try:
         response = s3_client.generate_presigned_post(bucket_name,
@@ -45,10 +43,9 @@ def main():
                 aws_secret_access_key=SECRET_KEY,
                 region_name=REGION_NAME)
 
-
     # Generate a presigned S3 POST URL
     object_name = 'upload.txt'
-    response = create_presigned_post(BUCKET_NAME, object_name)
+    response = create_presigned_post(session,BUCKET_NAME, object_name)
     if response is None:
         exit(1)
 
@@ -58,7 +55,9 @@ def main():
         http_response = requests.post(response['url'], data=response['fields'], files=files)
     # If successful, returns HTTP status code 204
     logging.info(f'File upload HTTP status code: {http_response.status_code}')
+    print(http_response.status_code, http_response.headers)
+    print( http_response.content)
+    print("x"*10)
 
-if __name__ == main :
+if __name__ == "__main__":
     main()
- 
