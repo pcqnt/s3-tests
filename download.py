@@ -1,7 +1,8 @@
 from boto3 import Session
 from botocore.client import Config
-ACCESS_KEY = ""
-SECRET_KEY = ""
+import os
+ACCESS_KEY = os.environ['ACCESS_KEY']
+SECRET_KEY = os.environ['SECRET_KEY']
 REGION_NAME = "gra"
 BUCKET_NAME = "opi-s3-ai-notebook-test"
 ENDPOINT_URL="https://s3.gra.io.cloud.ovh.net"
