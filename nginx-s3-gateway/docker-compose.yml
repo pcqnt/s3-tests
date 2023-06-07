@@ -1,0 +1,39 @@
+version: '3'
+services:
+    nginx-rp-s3:
+        container_name: nginx-rp-s3
+        image: nginxinc/nginx-s3-gateway
+        restart: unless-stopped
+        environment:
+          - ALLOW_DIRECTORY_LIST=true
+          - AWS_SIGS_VERSION=4
+          - DNS_RESOLVERS=1.1.1.1
+          - AWS_ACCESS_KEY_ID=abcd
+          - AWS_SECRET_ACCESS_KEY=defg
+          - S3_BUCKET_NAME=my-bucket-abc
+          - S3_SERVER=s3.rbx.io.cloud.ovh.net
+          - S3_SERVER_PROTO=https
+          - S3_SERVER_PORT=443
+          - S3_STYLE=path
+          - DEBUG=true
+          - S3_REGION=rbx
+        networks:
+          - proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.nginx-rp-s3-secure.entrypoints=https"
+          - "traefik.http.routers.nginx-rp-s3-secure.rule=Host(`www.mydomain.ovh`)"
+          - "traefik.http.routers.nginx-rp-s3-secure.tls=true"
+          - "traefik.http.routers.nginx-rp-s3-secure.tls.certresolver=http"
+          - "traefik.http.routers.nginx-rp-s3-secure.service=nginx-rp-s3"
+          - "traefik.http.services.nginx-rp-s3.loadbalancer.server.port=80"
+          - "traefik.docker.network=proxy"
+          - "com.centurylinklabs.watchtower.enable=true"
+        logging:
+          driver: "json-file"
+          options:
+            max-size: "1m"
+            max-file: "3"
+networks:
+  proxy:
+    external: true
