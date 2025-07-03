@@ -1,62 +1,71 @@
-import logging
 import boto3
-from botocore.exceptions import ClientError
+import json
 import os
-import requests    # To install: pip install requests
+from botocore.client import Config
 
-def create_presigned_post(session, bucket_name, object_name,
-                          fields=None, conditions=None, expiration=3600):
-    """Generate a presigned URL S3 POST request to upload a file
 
-    :param bucket_name: string
-    :param object_name: string
-    :param fields: Dictionary of prefilled form fields
-    :param conditions: List of conditions to include in the policy
-    :param expiration: Time in seconds for the presigned URL to remain valid
-    :return: Dictionary with the following keys:
-        url: URL to post to
-        fields: Dictionary of form fields and values to submit with the POST
-    :return: None if error.
-    """
-    s3_client = session.client(service_name='s3', endpoint_url="https://s3.eu-west-lz-bru-a.cloud.ovh.net/")
+def create_presigned_post(bucket_name, object_name,
+                          fields=None, conditions=None, expiration=3600,
+                          endpoint_url=None, aws_access_key_id=None, aws_secret_access_key=None):
+    """Generates a pre-signed POST URL that allows uploading to S3-compatible services."""
+    s3_client_config = {
+        'region_name': 'us-east-1',  # Required by boto3, often ignored by S3-compatible services
+         'config': Config(signature_version='s3')
+    }
+    if endpoint_url:
+        s3_client_config['endpoint_url'] = endpoint_url
+    if aws_access_key_id and aws_secret_access_key:
+        s3_client_config['aws_access_key_id'] = aws_access_key_id
+        s3_client_config['aws_secret_access_key'] = aws_secret_access_key
+    s3_client = boto3.client('s3', **s3_client_config)
     try:
-        response = s3_client.generate_presigned_post(bucket_name,
-                                                     object_name,
-                                                     Fields=fields,
-                                                     Conditions=conditions,
-                                                     ExpiresIn=expiration)
-    except ClientError as e:
-        logging.error(e)
+        response = s3_client.generate_presigned_post(
+            Bucket=bucket_name,
+            Key=object_name,
+            Fields=fields,
+            Conditions=conditions,
+            ExpiresIn=expiration
+        )
+    except Exception as e:
+        print(f"Error generating pre-signed POST URL: {e}")
         return None
-
-    # The response contains the presigned URL and required fields
     return response
 
-def main():
-    ACCESS_KEY = os.environ['ACCESS_KEY']
-    SECRET_KEY = os.environ['SECRET_KEY']
-    REGION_NAME = "bru"
-    BUCKET_NAME = "op-lz-bru"
-    OBJECT_KEY="upload.txt"
-    session = boto3.Session(aws_access_key_id=ACCESS_KEY,
-                aws_secret_access_key=SECRET_KEY,
-                region_name=REGION_NAME)
-
-    # Generate a presigned S3 POST URL
-    object_name = 'upload.txt'
-    response = create_presigned_post(session,BUCKET_NAME, object_name)
-    if response is None:
-        exit(1)
-
-    # Demonstrate how another Python program can use the presigned URL to upload a file
-    with open(object_name, 'rb') as f:
-        files = {'file': (object_name, f)}
-        http_response = requests.post(response['url'], data=response['fields'], files=files)
-    # If successful, returns HTTP status code 204
-    logging.info(f'File upload HTTP status code: {http_response.status_code}')
-    print(http_response.status_code, http_response.headers)
-    print( http_response.content)
-    print("x"*10)
 
 if __name__ == "__main__":
-    main()
+    # --- Configuration Parameters for OVH S3-Compatible Storage ---
+    my_bucket_name = "olivier"
+    my_object_key = "uploads/test-upload.pdf"
+    ovh_endpoint = "https://s3.eu-west-lz-lux-a.cloud.ovh.net/"
+    my_access_key = os.environ['ACCESS_KEY']
+    my_secret_key = os.environ['SECRET_KEY']
+    optional_fields = {}  # Can be empty unless specific fields required
+    optional_conditions = [
+        ["content-length-range", 0, 20 * 1024 * 1024]  # Max 20 MB
+    ]
+    expiration_time = 600  # 10 minutes
+    presigned_post_data = create_presigned_post(
+        my_bucket_name,
+        my_object_key,
+        fields=optional_fields,
+        conditions=optional_conditions,
+        expiration=expiration_time,
+        endpoint_url=ovh_endpoint,
+        aws_access_key_id=my_access_key,
+        aws_secret_access_key=my_secret_key
+    )
+    if presigned_post_data:
+        print("Successfully generated Pre-signed POST URL for OVH:")
+        print(f"  URL: {presigned_post_data['url']}")
+        print("  Form Fields (as JSON):")
+        print(json.dumps(presigned_post_data['fields'], indent=2))
+        print("\n--- Example HTML Form Snippet for Upload ---")
+        print(f'<form action="{presigned_post_data["url"]}" method="POST" enctype="multipart/form-data">')
+        for key, value in presigned_post_data['fields'].items():
+            print(f'  <input type="hidden" name="{key}" value="{value}" />')
+        print(f'  <input type="file" name="file" />')
+        print(f'  <input type="submit" value="Upload" />')
+        print(f'</form>')
+        print("\nNote: The file field name MUST be 'file' for S3 Pre-signed POST uploads.")
+    else:
+        print("Pre-signed POST URL could not be generated.")
