@@ -34,14 +34,14 @@ def create_presigned_post(bucket_name, object_name,
 
 if __name__ == "__main__":
     # --- Configuration Parameters for OVH S3-Compatible Storage ---
-    my_bucket_name = "my-bucket-name"
-    my_object_key = "uploads/test-upload.pdf"
-    ovh_endpoint = "https://s3.eu-west-lz-lux-a.cloud.ovh.net/"
-    my_access_key = os.environ['ACCESS_KEY']
-    my_secret_key = os.environ['SECRET_KEY']
+    my_bucket_name = "my-bucket-name" # name of your object storage bucket 
+    my_object_key = "uploads/test-upload.pdf" # where the object will be stored on the bucket 
+    ovh_endpoint = "https://s3.eu-west-lz-lux-a.cloud.ovh.net/" # Luxembourg local zone, to adapt
+    my_access_key = os.environ['ACCESS_KEY']  # read S3 access key from environment variable
+    my_secret_key = os.environ['SECRET_KEY']  # same for secret key 
     optional_fields = {}  # Can be empty unless specific fields required
     optional_conditions = [
-        ["content-length-range", 0, 20 * 1024 * 1024]  # Max 20 MB
+        ["content-length-range", 0, 20 * 1024 * 1024]  # Allow max 20 MB for the upload 
     ]
     expiration_time = 600  # 10 minutes
     presigned_post_data = create_presigned_post(
