@@ -10,7 +10,7 @@ def create_presigned_post(bucket_name, object_name,
     """Generates a pre-signed POST URL that allows uploading to S3-compatible services."""
     s3_client_config = {
         'region_name': 'us-east-1',  # Required by boto3, often ignored by S3-compatible services
-         'config': Config(signature_version='s3')
+         'config': Config(signature_version='s3') # forcing s3v2 signature, does not work with s3v4
     }
     if endpoint_url:
         s3_client_config['endpoint_url'] = endpoint_url
