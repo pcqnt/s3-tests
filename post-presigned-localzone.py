@@ -34,7 +34,7 @@ def create_presigned_post(bucket_name, object_name,
 
 if __name__ == "__main__":
     # --- Configuration Parameters for OVH S3-Compatible Storage ---
-    my_bucket_name = "olivier"
+    my_bucket_name = "my-bucket-name"
     my_object_key = "uploads/test-upload.pdf"
     ovh_endpoint = "https://s3.eu-west-lz-lux-a.cloud.ovh.net/"
     my_access_key = os.environ['ACCESS_KEY']
